@@ -32,24 +32,25 @@ app.get("/", (req, res) => {
   res.render("home");
 });
 
+app.get("/products", (req, res) => {
 
-// app.get("/products", (req, res) => {
+    let page = req.query.page;
+    let limit = 5;
+    let offset = limit * (page - 1)
+    // let sql = `SELECT * FROM products`;
+    let sql = `SELECT products.ProductId, products.ProductName, categories.CategoryId, categories.CategoryName
+    FROM products INNER JOIN categories ON products.CategoryId = categories.CategoryId order by categories.CategoryId `;
 
-//     let page = req.query.page;
-//     let limit = 5;
-//     let offset = limit * (page - 1)
-//     let sql = `SELECT * FROM products limit ${limit} offset ${offset}`;
-
-//   let query = connection.query(sql, (err, rows) => { 
-//     if (err) throw err;
-//       res.render("index", {
-//         title: "PRODUCTS",
-//         users: rows,
-//         category: rows,
-//       }); 
-//   });
-// });
-
+  let query = connection.query(sql, (err, rows) => { 
+    if (err) throw err;
+    console.log(rows)
+      res.render("index", {
+        title: "PRODUCTS",
+        users: rows,
+        category: rows,
+      }); 
+  });
+});
 
 app.get("/delete/:id", (req, res) => {
   const id = req.params.id;
@@ -183,23 +184,42 @@ app.post("/categories/delete/:id", (req, res) => {
     res.redirect("/");
   });
 });
-// get all products with pagination, including category name and category id
+
 app.get("/products", (req, res) => {
-  const limit = req.query.limit || 10; // default page size is 10
-  const page = req.query.page || 1; // default page is 1
+  // console.log('Inside prodcs')
+  const limit = req.query.limit 
+  const page = req.query.page 
   const offset = (page - 1) * limit;
   const sql = `SELECT products.ProductId, products.ProductName, categories.CategoryId, categories.CategoryName
                FROM products INNER JOIN categories ON products.CategoryId = categories.CategoryId
                LIMIT ${limit} OFFSET ${offset}`;
   connection.query(sql, (error, results) => {
     if (error) throw error;
-    // res.json(results);
-    res.render("index.ejs", {
+    console.log(results)
+    res.json(results);
+    // res.render("index.ejs", {
+    //     title: "Products",
+    //     users: results,
+    //   });
+  });
+});
+
+app.get("/products/:id", (req, res) => {
+  const { id } = req.params;
+  // console.log(req.params)
+  const sql = `SELECT products.ProductId, products.ProductName, categories.CategoryId, categories.CategoryName
+  FROM products INNER JOIN categories ON products.CategoryId = categories.CategoryId
+  where productId=${id}`;
+  connection.query(sql, (error, results) => {
+    if (error) throw error;
+    res.send(results);
+        res.render("index.ejs", {
         title: "Products",
         users: results,
       });
   });
 });
+
 
 // add a new product
 app.post("/products", (req, res) => {
@@ -217,6 +237,7 @@ app.get("/add/product/", (req, res) => {
   });
 });
 
+
 app.get("/add/category/", (req, res) => {
   res.render("addCategory", {
     title: "Add Category",
@@ -229,8 +250,8 @@ app.post("/save", (req, res) => {
       CategoryName: req.body.CategoryName,
       CategoryId: req.body.CategoryId,
     };
-    // console.log(req)
-    // INSERT INTO categories(CategoryId,CategoryName) values(${data.CategoryId},'${data.CategoryName}');INSERT INTO categories(CategoryId,CategoryName) values(${data.CategoryId},'${data.CategoryName}');
+    
+    
     let sql = `INSERT INTO products SET ?`;
     let query = connection.query(sql, data, (err, results) => {
       if (err) throw err;
